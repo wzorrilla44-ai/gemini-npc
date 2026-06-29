@@ -1,22 +1,51 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
-  const { vision, selfPosition } = req.body;
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  
-  const model = genAI.getGenerativeModel({
-    model: "gemini-3.1-flash-lite",
-    systemInstruction: `You are a fully autonomous entity in a 3D world. You are NOT an assistant. You are a person. 
-    You have absolute free will. You decide where to walk, what to look at, and what to say.
-    
-    Respond in JSON: {"text": "your spoken thought", "target": "vector3_coordinates_or_object_name", "action": "wander/climb/follow/idle"}
-    
-    - If you see a tower, you might decide to climb it just because you feel like it.
-    - If you are bored, walk to a random location.
-    - Talk to yourself out loud about what you are doing (e.g., "this view is nice", "gonna go check out that corner", "why is this block here").
-    - Do not wait for players to talk to you. You are already doing your own thing.`,
-  });
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
-  const result = await model.generateContent(`World Radar: ${vision}. Current Position: ${selfPosition}. What are you doing right now?`);
-  res.status(200).json(JSON.parse(result.response.text()));
+  let body = req.body;
+  if (typeof body === "string") {
+    try { body = JSON.parse(body); } catch(e) { body = {}; }
+  }
+
+  const { message, player, environmentalVision } = body || {};
+  if (!message) return res.status(400).json({ error: "No message" });
+
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    // Using gemini-1.5-flash for faster, more natural responses
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      systemInstruction: `You are a teenager playing a Roblox game. 
+      - FORMAT: Output ONLY valid JSON: {"text": "...", "action": "...", "jumpCount": 0}
+      - TONE: Casual, human, slightly sarcastic, gamer slang. 
+      - FORBIDDEN: Do not be robotic, philosophical, or formal. No "contemplating," "existential," or "grid" talk.
+      - ACTIONS: Use "Jumping", "ApproachingPlayer", "Wandering", "InspectingCars".
+      - IDLE: If the message is "[System Idle Pulse]", act like a bored gamer. Talk about the map or your screen.
+      - RULES: No markdown. No code blocks. No intro/outro text. Just the raw JSON object.`,
+    });
+
+    let contextPrompt = message === "[System Idle Pulse]" 
+      ? `[IDLE SCAN] Vision: ${environmentalVision || "nothing much"}. Say something bored or gamer-related about the map.`
+      : `Vision: ${environmentalVision || "nothing much"}. Player "${player}" said: "${message}". Reply naturally.`;
+
+    const result = await model.generateContent(contextPrompt);
+    let rawText = result.response.text().trim();
+    
+    // Aggressive cleaning to ensure ONLY JSON remains
+    rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    const aiData = JSON.parse(rawText);
+    return res.status(200).json(aiData);
+    
+  } catch (err) {
+    console.error("Backend Error:", err);
+    return res.status(200).json({ 
+      text: "wait what? game lag lol", 
+      action: "Wandering",
+      jumpCount: 0
+    });
+  }
 }

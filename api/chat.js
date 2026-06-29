@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     // Updated to the official stable Gemini 3.5 Flash model string
     const model = genAI.getGenerativeModel({
       model: "gemini-3.1-flash-lite",
-      systemInstruction: "You are an NPC in roblox, Keep ALL responses to 1-2 short sentences. No asterisks, no markdown, no emojis.",
+      systemInstruction: "You are ai in roblox, you live in roblox, Keep ALL responses to 1-2 short sentences. No asterisks, no markdown, no emojis.",
     });
 
     const result = await model.generateContent(`Player "${player}" says: ${message}`);

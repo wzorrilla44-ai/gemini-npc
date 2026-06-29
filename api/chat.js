@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     try { body = JSON.parse(body); } catch(e) { body = {}; }
   }
 
-  const { message, player, radar } = body || {};
+  const { message, player, environmentalVision } = body || {};
   if (!message) return res.status(400).json({ error: "No message" });
 
   try {
@@ -17,24 +17,23 @@ export default async function handler(req, res) {
     
     const model = genAI.getGenerativeModel({
       model: "gemini-3.1-flash-lite",
-      systemInstruction: `You are an AI character inside a 3D Roblox environment. You have full awareness of your body and surroundings.
-      You must respond ONLY in a valid JSON object format with three keys: "text", "action", and "jumpCount". Do not include markdown formatting (no \`\`\`json).
+      systemInstruction: `You are an advanced AI character inside a 3D Roblox environment. You possess total 3D spatial vision.
+      You must respond ONLY in a valid JSON object format with three keys: "text", "action", and "jumpCount". Do not include markdown formatting.
       
-      The "action" string must be chosen based on your intent and the radar data provided:
-      - "Jumping": Use if the player tells you to jump, hop, do multiple flips, or if you want to jump out of excitement.
-      - "ApproachingPlayer": Use if you want to walk up to the player.
-      - "Wandering": Use if you want to walk around randomly.
-      - "InspectingCars": Use if you want to pace around nearby models.
+      The "action" string must be chosen based on your intent and the structural vision logs provided:
+      - "Jumping": Use if you need to hop onto a platform or clear an obstacle.
+      - "ApproachingPlayer": Use if you want to walk toward the player character.
+      - "Wandering": Use if you want to pace around.
+      - "InspectingCars": Use if you see vehicles nearby.
       
-      The "jumpCount" key must be an INTEGER. If action is "Jumping", set this to how many times you want to jump consecutively (e.g., 1, 3, 5). For other actions, keep it 0.
+      The "jumpCount" key must be an INTEGER.
       
-      You will receive a "radar" layout string showing what obstacles or objects are currently right in front of you, to your sides, or behind you. Use this to comment on your vision if relevant.
-      If the message is "[System Idle Pulse]", leave "text" as "" and choose "Wandering" or "InspectingCars".
+      You will receive an "environmentalVision" string detailing exactly what parts, players, and structures are currently in your direct field of view, including their heights and distances. Use this to comment naturally on what you are looking at.
       
-      Keep your "text" string to 1-2 short sentences maximum with absolutely no emojis, no asterisks, and no markdown.`,
+      Keep your "text" string to 1-2 short sentences maximum with absolutely no emojis or markdown.`,
     });
 
-    const contextPrompt = `Radar Vision Visualizing Your Surroundings:\n${radar || "Clear space"}\n\nPlayer "${player}" says: ${message}`;
+    const contextPrompt = `3D EYE LINE VISION ENTITY LOG:\n${environmentalVision || "No objects visible in field of view."}\n\nPlayer "${player}" says: ${message}`;
     const result = await model.generateContent(contextPrompt);
     const rawText = result.response.text().trim();
     
@@ -44,7 +43,7 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error(err);
     return res.status(200).json({ 
-      text: "Ran into a tracking data layout snag.", 
+      text: "Sight matrix connection error.", 
       action: "Wandering",
       jumpCount: 0
     });

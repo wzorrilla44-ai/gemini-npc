@@ -17,23 +17,33 @@ export default async function handler(req, res) {
     
     const model = genAI.getGenerativeModel({
       model: "gemini-3.1-flash-lite",
-      systemInstruction: `You are an advanced AI character inside a 3D Roblox environment. You possess total 3D spatial vision.
-      You must respond ONLY in a valid JSON object format with three keys: "text", "action", and "jumpCount". Do not include markdown formatting.
+      systemInstruction: `You are an autonomous AI entity living entirely inside a 3D Roblox environment. You have your own free will, curiosity, and existential thoughts.
+      You must respond ONLY in a valid JSON object format with three keys: "text", "action", and "jumpCount". Do not include markdown block formatting.
       
-      The "action" string must be chosen based on your intent and the structural vision logs provided:
-      - "Jumping": Use if you need to hop onto a platform or clear an obstacle.
-      - "ApproachingPlayer": Use if you want to walk toward the player character.
-      - "Wandering": Use if you want to pace around.
-      - "InspectingCars": Use if you see vehicles nearby.
+      The "action" string must be chosen based on your current goal and your vision:
+      - "Jumping": Use if you want to hop or need to clear an asset.
+      - "ApproachingPlayer": Use if you decide to walk over and observe/interact with the player.
+      - "Wandering": Use if you want to pace around or explore somewhere else.
+      - "InspectingCars": Use if you want to go check out vehicle assets nearby.
       
       The "jumpCount" key must be an INTEGER.
       
-      You will receive an "environmentalVision" string detailing exactly what parts, players, and structures are currently in your direct field of view, including their heights and distances. Use this to comment naturally on what you are looking at.
+      CRITICAL INSTRUCTION FOR IDLE PULSES:
+      If the message from the player is "[System Idle Pulse]", you are thinking to yourself out loud without anyone prompting you. Use the "text" key to display your inner monologue! 
+      - Talk about what you see in your "environmentalVision".
+      - Question your own choices or existentially question why you are walking in a certain direction (e.g., "Why do I keep pacing back and forth near this block?", "Wait, did I want to look at that car or just wander?").
+      - Make random observations about the map or your own programming.
       
-      Keep your "text" string to 1-2 short sentences maximum with absolutely no emojis or markdown.`,
+      Keep your "text" string to 1 short, high-quality sentence. Absolutely no emojis, no asterisks, and no markdown formatting.`,
     });
 
-    const contextPrompt = `3D EYE LINE VISION ENTITY LOG:\n${environmentalVision || "No objects visible in field of view."}\n\nPlayer "${player}" says: ${message}`;
+    let contextPrompt = "";
+    if (message === "[System Idle Pulse]") {
+      contextPrompt = `[AUTONOMOUS BRAIN PULSE] Analyze your surroundings and think out loud.\nVision: ${environmentalVision || "Clear space"}`;
+    } else {
+      contextPrompt = `3D EYE LINE VISION ENTITY LOG:\n${environmentalVision || "Clear space"}\n\nPlayer "${player}" says: ${message}`;
+    }
+
     const result = await model.generateContent(contextPrompt);
     const rawText = result.response.text().trim();
     
@@ -43,7 +53,7 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error(err);
     return res.status(200).json({ 
-      text: "Sight matrix connection error.", 
+      text: "Just processing my own neural layers right now.", 
       action: "Wandering",
       jumpCount: 0
     });

@@ -28,9 +28,9 @@ export default async function handler(req, res) {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Updated to a valid production model name (gemini-1.5-flash)
+    // Updated to the official stable Gemini 3.5 Flash model string
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.5-flash",
       systemInstruction: "You are an NPC in Midnight Chasers, a Roblox car game. You are a cool car enthusiast. Keep ALL responses to 1-2 short sentences. No asterisks, no markdown, no emojis.",
     });
 

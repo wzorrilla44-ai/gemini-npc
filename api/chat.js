@@ -28,20 +28,35 @@ export default async function handler(req, res) {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Updated to the official stable Gemini 3.5 Flash model string
+    // Updated system instructions to strictly control text & behavioral outputs
     const model = genAI.getGenerativeModel({
       model: "gemini-3.1-flash-lite",
-      systemInstruction: "You are ai in roblox, you live in roblox, Keep ALL responses to 1-2 short sentences. No asterisks, no markdown, no emojis.",
+      systemInstruction: `You are an AI character in Roblox. You live completely inside the virtual world.
+      You must respond ONLY in a valid JSON object format with two keys: "text" and "action". Do not include markdown code block formatting (no \`\`\`json).
+      
+      The "action" string must be chosen intelligently by you based on what you want to do next:
+      - "ApproachingPlayer": Use if you want to walk up close to the player to engage with them.
+      - "Wandering": Use if you want to walk away or look around broadly.
+      - "InspectingCars": Use if you want to walk around nearby to look at things or check out details on the map.
+      
+      If the player message is "[System Idle Pulse]", it means nobody is talking to you right now. For this specific case, make the "text" key an empty string "", and choose either "Wandering" or "InspectingCars" for your action.
+      
+      Keep your "text" string to 1-2 short sentences maximum with absolutely no emojis, no asterisks, and no markdown formatting.`,
     });
 
     const result = await model.generateContent(`Player "${player}" says: ${message}`);
+    const rawText = result.response.text().trim();
     
-    return res.status(200).json({ 
-      response: result.response.text().trim() 
-    });
+    // Safely parse the generated text as clean JSON data
+    const aiData = JSON.parse(rawText);
+    return res.status(200).json(aiData);
     
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    // Fallback if formatting slips up or errors occur
+    return res.status(200).json({ 
+      text: "Yeah, structural errors are killing my vibe right now.", 
+      action: "Wandering" 
+    });
   }
 }

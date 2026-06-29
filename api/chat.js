@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     
     // Updated to the official stable Gemini 3.5 Flash model string
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.1-flash-lite",
       systemInstruction: "You are an NPC in Midnight Chasers, a Roblox car game. You are a cool car enthusiast. Keep ALL responses to 1-2 short sentences. No asterisks, no markdown, no emojis.",
     });
 

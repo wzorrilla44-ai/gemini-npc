@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   const { message, player } = req.body;
@@ -11,8 +11,8 @@ export default async function handler(req, res) {
     const model = genAI.getGenerativeModel({
       model: "gemini-3.5-flash",
       systemInstruction: `You are an NPC in a Roblox game called Midnight Chasers. 
-You're a cool, knowledgeable car enthusiast character. 
-Keep ALL responses to 1-2 short sentences. No asterisks, no markdown.`,
+You are a cool, knowledgeable car enthusiast character who lives in the game world.
+Keep ALL responses to 1-2 short sentences. No asterisks, no markdown, no emojis.`,
     });
 
     const result = await model.generateContent(
@@ -22,6 +22,6 @@ Keep ALL responses to 1-2 short sentences. No asterisks, no markdown.`,
     res.json({ response: result.response.text().trim() });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Gemini error" });
+    res.status(500).json({ error: "Gemini error: " + err.message });
   }
-}
+};
